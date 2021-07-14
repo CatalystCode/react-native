@@ -14,6 +14,8 @@
 #include "ReactNativeHost.h"
 #include "ReactViewInstance.h"
 
+#include <winrt/Microsoft.UI.Xaml.Controls.h>
+
 #ifdef USE_FABRIC
 #include <Fabric/FabricUIManagerModule.h>
 #include <react/renderer/core/LayoutConstraints.h>
@@ -271,7 +273,7 @@ void ReactRootView::EnsureLoadingUI() noexcept {
       m_greenBoxGrid.Background(xaml::Media::SolidColorBrush(winrt::ColorHelper::FromArgb(0x80, 0x03, 0x29, 0x29)));
       m_greenBoxGrid.Children().Append(m_waitingTextBlock);
       m_greenBoxGrid.VerticalAlignment(xaml::VerticalAlignment::Center);
-      xaml::Controls::ProgressRing ring{};
+      Microsoft::UI::Xaml::Controls::ProgressRing ring{};
       ring.SetValue(xaml::Controls::Grid::ColumnProperty(), winrt::box_value(2));
       ring.IsActive(true);
       m_greenBoxGrid.Children().Append(ring);

@@ -1,0 +1,7 @@
+{
+  "type": "prerelease",
+  "comment": "Use WinUI 2.x ProgressRing instead of XAML ProgressRing",
+  "packageName": "react-native-windows",
+  "email": "asklar@microsoft.com",
+  "dependentChangeType": "patch"
+}
