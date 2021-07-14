@@ -1,0 +1,54 @@
+parameters:
+  - name: buildEnvironment
+    type: string
+    default: PullRequest
+    values: 
+     - PullRequest 
+     - Continuous
+  - name: encodedKey
+    type: string
+  - name: buildConfiguration
+    type: string
+    default: 'Debug'
+    values:
+    - Debug
+    - Release
+  - name: buildPlatform
+    type: string
+  - name: deployOption
+    type: string
+  - name: buildLogDirectory
+    type: string
+  - name: workingDirectory
+    type: string
+
+steps:
+  - template: ../templates/setup-certificate.yml
+    parameters:
+      buildEnvironment: ${{ parameters.BuildEnvironment }}
+      encodedKey: ${{ parameters.encodedKey }}
+
+  - task: CmdLine@2
+    displayName: run-windows (Debug)
+    inputs:
+      script: yarn windows --no-packager --no-launch ${{ parameters.deployOption }} --arch ${{ parameters.buildPlatform }} --logging --buildLogDirectory ${{ parameters.buildLogDirectory }} --msbuildprops BaseIntDir=$(BaseIntDir),AppxPackageSigningEnabled=False
+      workingDirectory: ${{ parameters.workingDirectory }}
+    condition: and(succeeded(), eq('${{ parameters.buildConfiguration }}', 'Debug'))
+
+  - task: CmdLine@2
+    displayName: run-windows (Release) - PR
+    inputs:
+      script: yarn windows --no-packager --no-launch ${{ parameters.deployOption }} --arch ${{ parameters.buildPlatform }} --logging --buildLogDirectory ${{ parameters.buildLogDirectory }} --release --msbuildprops BaseIntDir=$(BaseIntDir),AppxPackageSigningEnabled=False
+      workingDirectory: ${{ parameters.workingDirectory }}
+    condition: and(succeeded(), eq('${{ parameters.buildConfiguration }}', 'Release'), eq('${{ parameters.buildEnvironment }}', 'PullRequest'))
+
+  - task: CmdLine@2
+    displayName: run-windows (Release) - CI
+    inputs:
+      script: yarn windows --no-packager --no-launch ${{ parameters.deployOption }} --arch ${{ parameters.buildPlatform }} --logging --buildLogDirectory ${{ parameters.buildLogDirectory }} --release --msbuildprops BaseIntDir=$(BaseIntDir),PackageCertificateKeyFile=$(Build.SourcesDirectory)\EncodedKey.pfx
+      workingDirectory: ${{ parameters.workingDirectory }}
+    condition: and(succeeded(), eq('${{ parameters.buildConfiguration }}', 'Release'), eq('${{ parameters.buildEnvironment }}', 'Continuous'))
+
+  - template: ../templates/cleanup-certificate.yml
+    parameters:
+      buildEnvironment: ${{ parameters.BuildEnvironment }}

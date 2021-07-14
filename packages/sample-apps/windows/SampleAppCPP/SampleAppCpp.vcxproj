@@ -71,10 +71,6 @@
   <ImportGroup Label="ReactNativeWindowsPropertySheets">
     <Import Project="$(ReactNativeWindowsDir)\PropertySheets\External\Microsoft.ReactNative.Uwp.CppApp.props" Condition="Exists('$(ReactNativeWindowsDir)\PropertySheets\External\Microsoft.ReactNative.Uwp.CppApp.props')" />
   </ImportGroup>
-  <PropertyGroup Label="UserMacros">
-    <PackageCertificateThumbprint>86796DBBD88E7950574258FEA977ACB563AB5A09</PackageCertificateThumbprint>
-    <PackageCertificateKeyFile>SampleAppCpp_TemporaryKey.pfx</PackageCertificateKeyFile>
-  </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>

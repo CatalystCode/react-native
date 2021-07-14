@@ -18,11 +18,13 @@ jobs:
           BuildPlatform: x86
           SolutionFile: Playground.sln
           TestWACK: true
+          UploadAppx: true
         X64ReleaseUniversal:
           BuildConfiguration: Release
           BuildPlatform: x64
           SolutionFile: Playground.sln
           TestWACK: true
+          UploadAppx: true
         X86DebugWin32:
           BuildConfiguration: Debug
           BuildPlatform: x86
@@ -36,6 +38,7 @@ jobs:
           BuildPlatform: x86
           SolutionFile: Playground.sln
           BuildWinUI3: true
+          UploadAppx: true
     pool: $(AgentPool.Medium)
     timeoutInMinutes: 60
     cancelTimeoutInMinutes: 5
@@ -68,15 +71,10 @@ jobs:
           restoreSolution: packages/playground/windows/$(SolutionFile)
           verbosityRestore: Detailed # Options: quiet, normal, detailed
 
-      - task: PowerShell@2
-        displayName: Set Up Certificate
-        inputs:
-          targetType: 'inline'
-          script: |
-            $PfxBytes = [System.Convert]::FromBase64String("$(playgroundEncodedKey)")
-            $PfxPath = [System.IO.Path]::GetFullPath( (Join-Path -Path $(Build.SourcesDirectory) -ChildPath playground-Key.pfx) )
-            [System.IO.File]::WriteAllBytes("$PfxPath", $PfxBytes)
-        condition: eq('${{ parameters.BuildEnvironment }}', 'Continuous')
+      - template: ../templates/setup-certificate.yml
+        parameters:
+          buildEnvironment: ${{ parameters.BuildEnvironment }}
+          encodedKey: playgroundEncodedKey
 
       - task: VSBuild@1
         displayName: VSBuild - Playground PR
@@ -116,15 +114,9 @@ jobs:
             /p:PackageCertificateKeyFile=$(Build.SourcesDirectory)\EncodedKey.pfx
         condition: eq('${{ parameters.BuildEnvironment }}', 'Continuous')
 
-      - task: PowerShell@2
-        displayName: Remove Certificate
-        inputs:
-          targetType: 'inline'
-          script: |
-            $PfxPath = Join-Path -Path $(Build.SourcesDirectory) -ChildPath playground-Key.pfx
-            Write-Host $PfxPath
-            Remove-Item -path $PfxPath
-        condition: eq('${{ parameters.BuildEnvironment }}', 'Continuous')
+      - template: ../templates/cleanup-certificate.yml
+        parameters:
+          buildEnvironment: ${{ parameters.BuildEnvironment }}
 
       - powershell: $(Build.SourcesDirectory)/.ado/scripts/TestWACK.ps1 $(BuildPlatform) $(BuildConfiguration) $(Build.StagingDirectory)\WACK
         displayName: Test WACK
@@ -139,7 +131,7 @@ jobs:
 
       - task: PublishBuildArtifacts@1
         displayName: Upload App Package
-        condition: and(succeededOrFailed(), eq('${{ parameters.BuildEnvironment }}', 'Continuous'))
+        condition: and(succeededOrFailed(), eq(variables.UploadAppx, true), eq('${{ parameters.BuildEnvironment }}', 'Continuous'))
         inputs:
           pathtoPublish: 'packages/playground/windows/AppPackages/playground'
           artifactName: 'App Packages $(BuildPlatform) $(BuildConfiguration) ($(System.JobAttempt))'

@@ -20,30 +20,30 @@ jobs:
           Arm64Debug:
             BuildConfiguration: Debug
             BuildPlatform: ARM64
-            NoDeployOption: --no-deploy # We don't have Arm agents
+            DeployOption: --no-deploy # We don't have Arm agents
           Arm64Release:
             BuildConfiguration: Release
             BuildPlatform: ARM64
-            NoDeployOption: --no-deploy # We don't have Arm agents
+            DeployOption: --no-deploy # We don't have Arm agents
           X64Debug:
             BuildConfiguration: Debug
             BuildPlatform: x64
-            NoDeployOption:
+            DeployOption:
         # End Continuous only
         X64Release:
           BuildConfiguration: Release
           BuildPlatform: x64
-          NoDeployOption:
+          DeployOption: --deploy-from-layout
         X86Debug:
           BuildConfiguration: Debug
           BuildPlatform: x86
-          NoDeployOption:
+          DeployOption:
         # Start Continuous only
         ${{ if eq(parameters.buildEnvironment, 'Continuous') }}:
           X86Release:
             BuildConfiguration: Release
             BuildPlatform: x86
-            NoDeployOption:
+            DeployOption:
         # End Continuous only
     timeoutInMinutes: 60
     cancelTimeoutInMinutes: 5
@@ -64,19 +64,16 @@ jobs:
           verbosityRestore: Detailed # Options: quiet, normal, detailed
         condition: succeeded()
 
-      - task: CmdLine@2
-        displayName: run-windows (Debug)
-        inputs:
-          script: yarn windows --no-packager --no-launch $(NoDeployOption) --arch $(BuildPlatform) --logging --buildLogDirectory $(BuildLogDirectory) --msbuildprops BaseIntDir=$(BaseIntDir)
+      - template: ../templates/run-windows-with-certificates.yml
+        parameters:
+          buildEnvironment: ${{ parameters.BuildEnvironment }}
+          encodedKey: sampleAppCPPEncodedKey
+          ${{ if eq(variables.BuildConfiguration, 'Release') }}:
+            buildConfiguration: Release
+          buildPlatform: $(BuildPlatform)
+          deployOption: $(DeployOption)
+          buildLogDirectory: $(BuildLogDirectory)
           workingDirectory: packages/sample-apps
-        condition: and(succeeded(), eq(variables['BuildConfiguration'], 'Debug'))
-
-      - task: CmdLine@2
-        displayName: run-windows (Release)
-        inputs:
-          script: yarn windows --no-packager --no-launch $(NoDeployOption) --arch $(BuildPlatform) --logging --buildLogDirectory $(BuildLogDirectory) --release --msbuildprops BaseIntDir=$(BaseIntDir)
-          workingDirectory: packages/sample-apps
-        condition: and(succeeded(), eq(variables['BuildConfiguration'], 'Release'))
 
       - task: CmdLine@2
         displayName: Create SampleApp bundle

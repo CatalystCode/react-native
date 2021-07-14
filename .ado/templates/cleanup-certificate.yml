@@ -1,0 +1,18 @@
+parameters:
+  - name: buildEnvironment
+    type: string
+    default: PullRequest
+    values: 
+     - PullRequest 
+     - Continuous
+
+steps:
+  - task: PowerShell@2
+    displayName: Remove Certificate
+    inputs:
+      targetType: 'inline'
+      script: |
+        $PfxPath = Join-Path -Path $(Build.SourcesDirectory) -ChildPath EncodedKey.pfx
+        Write-Host $PfxPath
+        Remove-Item -path $PfxPath
+    condition: eq('${{ parameters.buildEnvironment }}', 'Continuous')

@@ -8,7 +8,7 @@
 
   <Identity
     Name="ReactUWPTestApp"
-    Publisher="CN=react-native-windows-testing"
+    Publisher="CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
     Version="1.0.0.0" />
 
   <mp:PhoneIdentity PhoneProductId="87fc81ab-83a8-412b-bec2-37f8f47d4b06" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>

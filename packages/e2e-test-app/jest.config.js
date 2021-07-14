@@ -38,7 +38,7 @@ module.exports = {
   setupFilesAfterEnv: ['./jest.setup.js'],
 
   testEnvironmentOptions: {
-    app: 'ReactUWPTestApp_cezq6h4ygq1hw!App',
+    app: 'ReactUWPTestApp_8wekyb3d8bbwe!App',
     enableRpc: true,
     webdriverOptions: {
       // Level of logging verbosity: trace | debug | info | warn | error

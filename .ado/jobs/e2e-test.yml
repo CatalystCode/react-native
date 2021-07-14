@@ -18,9 +18,13 @@ jobs:
           #   BuildPlatform: ARM64
           x64:
             BuildPlatform: x64
+          x86:
+            BuildPlatform: x86
         # End Continuous only
-        x86:
-          BuildPlatform: x86
+        ${{ if eq(parameters.buildEnvironment, 'PullRequest') }}:
+          x86:
+            BuildPlatform: x86
+            DeployOption: --deploy-from-layout
 
     variables:
       - template: ../variables/vs2019.yml
@@ -55,10 +59,14 @@ jobs:
           workingDirectory: $(Build.SourcesDirectory)
         condition: false # Must be manually enabled, since it causes a 5x perf reduction that causes test instability
 
-      - task: CmdLine@2
-        displayName: run-windows
-        inputs:
-          script: yarn windows --no-launch --no-packager --arch $(BuildPlatform) --release --logging --buildLogDirectory $(BuildLogDirectory) --msbuildprops BaseIntDir=$(BaseIntDir)
+      - template: ../templates/run-windows-with-certificates.yml
+        parameters:
+          buildEnvironment: ${{ parameters.BuildEnvironment }}
+          encodedKey: reactUWPTestAppEncodedKey
+          buildConfiguration: Release
+          buildPlatform: $(BuildPlatform)
+          deployOption: $(DeployOption)
+          buildLogDirectory: $(BuildLogDirectory)
           workingDirectory: packages/e2e-test-app
 
       - script: |

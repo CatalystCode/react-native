@@ -6,6 +6,3 @@
 /dist
 /windows/ReactUWPTestApp/Bundle/
 msbuild.binlog
-
-# Keep the template certificates
-!**/ReactUwpTestApp_TemporaryKey.pfx 
