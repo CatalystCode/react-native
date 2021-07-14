@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
+  <Import Project="$(SolutionDir)\ExperimentalFeatures.props" Condition="Exists('$(SolutionDir)\ExperimentalFeatures.props')" />
   <PropertyGroup>
+    <JsEnginePropsDefined>true</JsEnginePropsDefined>
+    <!-- Enabling this will (1) Include hermes glues in the Microsoft.ReactNative binaries AND (2) Make hermes the default engine -->
     <UseHermes Condition="'$(UseHermes)' == ''">false</UseHermes>
+    <!-- This will be true if (1) the client want to use hermes by setting UseHermes to true OR (2) We are building for UWP where dynamic switching is enabled -->
+    <IncludeHermes Condition="'$(IncludeHermes)' == '' And ('$(UseHermes)' == 'true' Or '$(ApplicationType)' == 'Windows Store')">true</IncludeHermes>
     <HermesVersion Condition="'$(HermesVersion)' == ''">0.8.0-ms.0</HermesVersion>   
     <HermesPackage Condition="'$(HermesPackage)' == '' And Exists('$(PkgReactNative_Hermes_Windows)')">$(PkgReactNative_Hermes_Windows)</HermesPackage>
     <HermesPackage Condition="'$(HermesPackage)' == ''">$(SolutionDir)packages\ReactNative.Hermes.Windows.$(HermesVersion)</HermesPackage>

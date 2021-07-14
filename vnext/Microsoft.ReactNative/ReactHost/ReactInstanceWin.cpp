@@ -66,9 +66,9 @@
 #include <Utils/UwpScriptStore.h>
 #endif
 
-#if defined(USE_HERMES)
+#if defined(INCLUDE_HERMES)
 #include "HermesRuntimeHolder.h"
-#endif // USE_HERMES
+#endif // INCLUDE_HERMES
 
 #if defined(USE_V8)
 #include <winrt/Windows.Storage.h>
@@ -435,7 +435,7 @@ void ReactInstanceWin::Initialize() noexcept {
 
       switch (m_options.JsiEngine) {
         case JSIEngine::Hermes:
-#if defined(USE_HERMES)
+#if defined(INCLUDE_HERMES)
           devSettings->jsiRuntimeHolder =
               std::make_shared<facebook::react::HermesRuntimeHolder>(devSettings, m_jsMessageThread.Load());
           devSettings->inlineSourceMap = false;

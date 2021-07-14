@@ -134,6 +134,9 @@
     <PackageReference Include="XamlTreeDump">
       <Version>1.0.9</Version>
     </PackageReference>
+    <PackageReference Include="ReactNative.Hermes.Windows">
+      <Version>0.8.0-ms.0</Version>
+    </PackageReference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Themes\" />

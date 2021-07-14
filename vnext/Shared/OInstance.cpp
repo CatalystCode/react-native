@@ -42,7 +42,7 @@
 #include <WebSocketJSExecutorFactory.h>
 #include "PackagerConnection.h"
 
-#if defined(USE_HERMES)
+#if defined(INCLUDE_HERMES)
 #include "HermesRuntimeHolder.h"
 #endif
 #if defined(USE_V8)
@@ -349,7 +349,7 @@ InstanceImpl::InstanceImpl(
       assert(m_devSettings->jsiEngineOverride != JSIEngineOverride::Default);
       switch (m_devSettings->jsiEngineOverride) {
         case JSIEngineOverride::Hermes:
-#if defined(USE_HERMES)
+#if defined(INCLUDE_HERMES)
           m_devSettings->jsiRuntimeHolder = std::make_shared<HermesRuntimeHolder>(m_devSettings, m_jsThread);
           m_devSettings->inlineSourceMap = false;
           break;

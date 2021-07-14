@@ -1,0 +1,7 @@
+{
+  "type": "prerelease",
+  "comment": "Including hermes by default in binary distributions",
+  "packageName": "react-native-windows",
+  "email": "email not defined",
+  "dependentChangeType": "patch"
+}
