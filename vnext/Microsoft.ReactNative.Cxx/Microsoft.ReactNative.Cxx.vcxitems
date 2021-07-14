@@ -99,18 +99,10 @@
       This is because msbuild has to invoke different cl.exe invocations for each
       set of flags and msbuild inside a project is single threaded.
     -->
-    <ClCompile Include="$(JSI_SourcePath)\jsi\jsi.cpp">
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="$(TurboModule_SourcePath)\ReactCommon\LongLivedObject.cpp">
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="$(TurboModule_SourcePath)\ReactCommon\TurboModule.cpp">
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="$(TurboModule_SourcePath)\ReactCommon\TurboModuleUtils.cpp">
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-    </ClCompile>
+    <ClCompile Include="$(JSI_SourcePath)\jsi\jsi.cpp" />
+    <ClCompile Include="$(TurboModule_SourcePath)\ReactCommon\LongLivedObject.cpp" />
+    <ClCompile Include="$(TurboModule_SourcePath)\ReactCommon\TurboModule.cpp" />
+    <ClCompile Include="$(TurboModule_SourcePath)\ReactCommon\TurboModuleUtils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)README.md" />

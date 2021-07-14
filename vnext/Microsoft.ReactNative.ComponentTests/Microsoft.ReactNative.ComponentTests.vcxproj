@@ -163,11 +163,12 @@
       <!--
         The JSI tests have a number of violations that we must suppress to avoid chaning the code.
         C4100 - unreferenced formal parameter
+        C4127 - conditional expression is constant in folly\lang\ToAscii.h(215,1)
         C4245 - 'initializing': conversion from 'int' to 'unsigned __int64', signed/unsigned mismatch
         C4389 - '==': signed/unsigned mismatch
         C4458 - declaration of '<varname>' hides class member
       -->
-      <DisableSpecificWarnings>4100;4245;4389;4458;$(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4100;4127;4245;4389;4458;$(DisableSpecificWarnings)</DisableSpecificWarnings>
       <!-- JSI tests require RuntimeTypeInfo -->
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <!-- To avoid RuntimeTypeInfo conflict with project's PCH -->

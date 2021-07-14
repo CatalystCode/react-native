@@ -15,10 +15,13 @@ class NativeModulesProvider final : public Mso::React::NativeModuleProvider2 {
       std::shared_ptr<facebook::react::MessageQueueThread> const &defaultQueueThread) override;
 
  public:
-  void AddModuleProvider(winrt::hstring const &moduleName, ReactModuleProvider const &moduleProvider) noexcept;
+  void AddModuleProvider(
+      winrt::hstring const &moduleName,
+      ReactModuleProvider const &moduleProvider,
+      IReactPropertyName const &dispatcherName) noexcept;
 
  private:
-  std::map<std::string, ReactModuleProvider> m_moduleProviders;
+  std::map<std::string, std::pair<ReactModuleProvider, IReactPropertyName>> m_moduleProviders;
   IReactPackageBuilder m_packageBuilder;
 };
 

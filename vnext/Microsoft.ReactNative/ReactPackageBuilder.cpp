@@ -4,7 +4,7 @@
 #include "pch.h"
 #include "ReactPackageBuilder.h"
 
-namespace winrt::Microsoft::ReactNative {
+namespace winrt::Microsoft::ReactNative::implementation {
 
 //===========================================================================
 // ReactPackageBuilder implementation
@@ -24,7 +24,7 @@ ReactPackageBuilder::ReactPackageBuilder(
 }
 
 void ReactPackageBuilder::AddModule(hstring const &moduleName, ReactModuleProvider const &moduleProvider) noexcept {
-  m_modulesProvider->AddModuleProvider(moduleName, moduleProvider);
+  m_modulesProvider->AddModuleProvider(moduleName, moduleProvider, nullptr);
 }
 
 #ifndef CORE_ABI
@@ -41,4 +41,11 @@ void ReactPackageBuilder::AddTurboModule(
   m_turboModulesProvider->AddModuleProvider(moduleName, moduleProvider);
 }
 
-} // namespace winrt::Microsoft::ReactNative
+void ReactPackageBuilder::AddDispatchedModule(
+    hstring const &moduleName,
+    ReactModuleProvider const &moduleProvider,
+    IReactPropertyName const &dispatcherName) noexcept {
+  m_modulesProvider->AddModuleProvider(moduleName, moduleProvider, dispatcherName);
+}
+
+} // namespace winrt::Microsoft::ReactNative::implementation

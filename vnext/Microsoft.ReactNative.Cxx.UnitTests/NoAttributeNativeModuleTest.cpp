@@ -551,8 +551,14 @@ struct SimpleNativeModule2 {
 
 /*static*/ std::string SimpleNativeModule2::StaticMessage;
 
-void GetReactModuleInfo(SimpleNativeModule2 *, React::ReactModuleBuilder<SimpleNativeModule2> &moduleBuilder) noexcept {
-  moduleBuilder.RegisterModuleName(L"SimpleNativeModule2");
+React::ReactModuleInfo const &GetReactModuleInfo(SimpleNativeModule2 *) {
+  static React::ReactModuleInfo moduleInfo(L"SimpleNativeModule2");
+  return moduleInfo;
+}
+
+void VisitReactModuleMembers(
+    SimpleNativeModule2 *,
+    React::ReactModuleBuilder<SimpleNativeModule2> &moduleBuilder) noexcept {
   moduleBuilder.RegisterInitMethod(&SimpleNativeModule2::Initialize);
   moduleBuilder.RegisterMethod(&SimpleNativeModule2::Add, L"Add");
   moduleBuilder.RegisterMethod(&SimpleNativeModule2::Negate, L"Negate");

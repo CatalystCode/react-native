@@ -1,0 +1,7 @@
+{
+  "type": "prerelease",
+  "comment": "Add dispatcherName to REACT_MODULE attribute",
+  "packageName": "react-native-windows",
+  "email": "vmorozov@microsoft.com",
+  "dependentChangeType": "patch"
+}

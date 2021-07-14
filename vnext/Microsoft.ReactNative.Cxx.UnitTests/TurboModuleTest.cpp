@@ -1237,16 +1237,16 @@ struct MyTurboModuleSpec : winrt::Microsoft::ReactNative::TurboModuleSpec {
 };
 
 TEST_CLASS (TurboModuleTest) {
-  winrt::Microsoft::ReactNative::ReactModuleBuilderMock m_builderMock{};
-  winrt::Microsoft::ReactNative::IReactModuleBuilder m_moduleBuilder;
+  React::ReactModuleBuilderMock m_builderMock{};
+  React::IReactModuleBuilder m_moduleBuilder;
   Windows::Foundation::IInspectable m_moduleObject{nullptr};
   MyTurboModule *m_module;
 
   TurboModuleTest() {
-    m_moduleBuilder = winrt::make<winrt::Microsoft::ReactNative::ReactModuleBuilderImpl>(m_builderMock);
-    auto provider = winrt::Microsoft::ReactNative::MakeTurboModuleProvider<MyTurboModule, MyTurboModuleSpec>();
+    m_moduleBuilder = winrt::make<React::ReactModuleBuilderImpl>(m_builderMock);
+    auto provider = React::MakeTurboModuleProvider<MyTurboModule, MyTurboModuleSpec>();
     m_moduleObject = m_builderMock.CreateModule(provider, m_moduleBuilder);
-    m_module = winrt::Microsoft::ReactNative::ReactNonAbiValue<MyTurboModule>::GetPtrUnsafe(m_moduleObject);
+    m_module = React::ReactNonAbiValue<MyTurboModule>::GetPtrUnsafe(m_moduleObject);
   }
 
   TEST_METHOD(TestMethodCall_Add) {

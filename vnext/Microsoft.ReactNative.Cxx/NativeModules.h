@@ -17,18 +17,32 @@
 #include <functional>
 #include <type_traits>
 
-// REACT_MODULE(moduleStruct, [opt] moduleName, [opt] eventEmitterName)
+// REACT_MODULE(moduleStruct, [opt, named] moduleName, [opt, named] eventEmitterName, [opt, named] dispatcherName)
 // Arguments:
 // - moduleStruct (required) - the struct name the macro is attached to.
-// - moduleName (optional) - the module name visible to JavaScript. Default is the moduleStruct name.
-// - eventEmitterName (optional) - the default event emitter name used by REACT_EVENT.
-//   Default is the RCTDeviceEventEmitter.
+// - moduleName (optional, named) - the module name visible to JavaScript. Default is the moduleStruct name.
+// - eventEmitterName (optional, named) - the default event emitter name used by REACT_EVENT.
+//     Default is the RCTDeviceEventEmitter.
+// - dispatcherName (optional, named) - the name of the property to get ReactDispatcher from the
+//     ReactInstanceSettings.Properties which is the same as the RectContext.Properties.
+//     The ReactDispatcher is used to call all module methods including the constructor and destructor.
+//     Default is the JSDispatcher.
 //
 // REACT_MODULE annotates a C++ struct as a ReactNative module.
 // It can be any struct which can be instantiated using a default constructor.
 // Note that it must be a 'struct', not 'class' because macro does a forward declaration using the 'struct' keyword.
-#define REACT_MODULE(/* moduleStruct, [opt] moduleName, [opt] eventEmitterName */...) \
-  INTERNAL_REACT_MODULE(__VA_ARGS__)(__VA_ARGS__)
+//
+// The optional properties can be provided either in the right position or using a named assignment in any order.
+// The only requirement is that the named properties must be after the positional properties.
+// For example:
+// REACT_MODULE(MyModule)
+// REACT_MODULE(MyModule, L"myModule", L"RCTDeviceEventEmitter", UIDispatcher)
+// REACT_MODULE(MyModule, eventEmitterName = L"myNoduleEmitter")
+// REACT_MODULE(MyModule, dispatcherName = UIDispatcher, moduleName = L"myModule")
+// REACT_MODULE(MyModule, L"myModule", dispatcherName = UIDispatcher)
+#define REACT_MODULE(                                                                                           \
+    moduleStruct, /* [opt, named] moduleName, [opt, named] eventEmitterName, [opt, named] dispatcherName */...) \
+  INTERNAL_REACT_MODULE(moduleStruct, __VA_ARGS__)
 
 // REACT_INIT(method)
 // Arguments:
@@ -753,8 +767,10 @@ struct ModuleEventFieldInfo<TFunc<void(TArgs...)> TModule::*> {
       FieldType field,
       std::wstring_view eventName,
       std::wstring_view eventEmitterName) noexcept {
-    return [module = static_cast<ModuleType *>(module), field, eventName, eventEmitterName](
-               IReactContext const &reactContext) noexcept {
+    return [module = static_cast<ModuleType *>(module),
+            field,
+            eventName = std::wstring(eventName),
+            eventEmitterName = std::wstring(eventEmitterName)](IReactContext const &reactContext) noexcept {
       module->*field = [reactContext, eventEmitterName, eventName](TArgs... args) noexcept {
         reactContext.EmitJSEvent(
             eventEmitterName, eventName, [&args...]([[maybe_unused]] IJSValueWriter const &argWriter) noexcept {
@@ -780,8 +796,10 @@ struct ModuleFunctionFieldInfo<TFunc<void(TArgs...)> TModule::*> {
       FieldType field,
       std::wstring_view functionName,
       std::wstring_view moduleName) noexcept {
-    return [module = static_cast<ModuleType *>(module), field, functionName, moduleName](
-               IReactContext const &reactContext) noexcept {
+    return [module = static_cast<ModuleType *>(module),
+            field,
+            functionName = std::wstring(functionName),
+            moduleName = std::wstring(moduleName)](IReactContext const &reactContext) noexcept {
       module->*field = [reactContext, functionName, moduleName](TArgs... args) noexcept {
         reactContext.CallJSFunction(moduleName, functionName, [&args...](IJSValueWriter const &argWriter) noexcept {
           WriteArgs(argWriter, args...);
@@ -858,18 +876,15 @@ struct IsReactMemberAttribute<ReactMemberAttribute<MemberKind>> : std::true_type
 
 template <class TModule>
 struct ReactModuleBuilder {
-  ReactModuleBuilder(TModule *module, IReactModuleBuilder const &moduleBuilder) noexcept
-      : m_module{module}, m_moduleBuilder{moduleBuilder} {}
+  ReactModuleBuilder(TModule *module, IReactModuleBuilder const &moduleBuilder, ReactModuleInfo const &info) noexcept
+      : m_module(module),
+        m_moduleBuilder(moduleBuilder),
+        m_moduleName(info.ModuleName),
+        m_eventEmitterName(info.EventEmitterName) {}
 
   template <int I>
-  void RegisterModule(std::wstring_view moduleName, std::wstring_view eventEmitterName, ReactAttributeId<I>) noexcept {
-    RegisterModuleName(moduleName, eventEmitterName);
+  void VisitModuleMembers(ReactAttributeId<I>) noexcept {
     ReactMemberInfoIterator<TModule>{}.template ForEachMember<I + 1>(*this);
-  }
-
-  void RegisterModuleName(std::wstring_view moduleName, std::wstring_view eventEmitterName = L"") noexcept {
-    m_moduleName = moduleName;
-    m_eventEmitterName = !eventEmitterName.empty() ? eventEmitterName : L"RCTDeviceEventEmitter";
   }
 
   void CompleteRegistration() noexcept {
@@ -951,8 +966,8 @@ struct ReactModuleBuilder {
  private:
   void *m_module;
   IReactModuleBuilder m_moduleBuilder;
-  std::wstring_view m_moduleName{L""};
-  std::wstring_view m_eventEmitterName{L""};
+  std::wstring m_moduleName;
+  std::wstring m_eventEmitterName;
   std::vector<InitializerDelegate> m_initializers;
 };
 
@@ -966,7 +981,7 @@ template <class TModule>
 struct ReactModuleVerifier {
   static constexpr VerificationResult VerifyMember(std::wstring_view name, ReactMemberKind memberKind) noexcept {
     ReactModuleVerifier verifier{name, memberKind};
-    GetReactModuleInfo(static_cast<TModule *>(nullptr), verifier);
+    VisitReactModuleMembers(static_cast<TModule *>(nullptr), verifier);
     return verifier.m_result;
   }
 
@@ -974,7 +989,7 @@ struct ReactModuleVerifier {
       : m_memberName{memberName}, m_memberKind{memberKind} {}
 
   template <int I>
-  constexpr void RegisterModule(std::wstring_view /*_*/, std::wstring_view /*_*/, ReactAttributeId<I>) noexcept {
+  constexpr void VisitModuleMembers(ReactAttributeId<I>) noexcept {
     ReactMemberInfoIterator<TModule>{}.template ForEachMember<I + 1>(*this);
   }
 
@@ -1173,8 +1188,8 @@ template <class TModule>
 inline ReactModuleProvider MakeModuleProvider() noexcept {
   return [](IReactModuleBuilder const &moduleBuilder) noexcept {
     auto [moduleWrapper, module] = ReactModuleTraits<TModule>::Factory();
-    ReactModuleBuilder builder{module, moduleBuilder};
-    GetReactModuleInfo(module, builder);
+    auto builder = ReactModuleBuilder(module, moduleBuilder, GetReactModuleInfo(module));
+    VisitReactModuleMembers(module, builder);
     builder.CompleteRegistration();
     return moduleWrapper;
   };
@@ -1186,6 +1201,22 @@ inline ReactModuleProvider MakeTurboModuleProvider() noexcept {
   TModuleSpec::template ValidateModule<TModule>();
   return MakeModuleProvider<TModule>();
 }
+
+template <class TModule>
+inline ReactModuleInfo const &GetReactModuleInfo() noexcept {
+  return GetReactModuleInfo(static_cast<TModule*>(nullptr));
+}
+
+template <class TDerived>
+struct ReactPackageProvider : implements<TDerived, IReactPackageProvider> {
+  template <class TModule>
+  void AddModule(IReactPackageBuilder const &packageBuilder) noexcept {
+    packageBuilder.as<ReactPackageBuilder>().AddDispatchedModule(
+        GetReactModuleInfo<TModule>().ModuleName,
+        MakeModuleProvider<TModule>(),
+        GetReactModuleInfo<TModule>().DispatcherName);
+  }
+};
 
 } // namespace winrt::Microsoft::ReactNative
 

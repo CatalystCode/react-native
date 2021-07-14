@@ -3,17 +3,20 @@
 
 #pragma once
 #include "ReactDispatcherHelper.g.h"
+#include <Threading/MessageDispatchQueue.h>
 #include <dispatchQueue/dispatchQueue.h>
 #include <winrt/Microsoft.ReactNative.h>
 
 namespace winrt::Microsoft::ReactNative::implementation {
 
-struct ReactDispatcher : implements<ReactDispatcher, winrt::default_interface<IReactDispatcher>> {
+struct ReactDispatcher : implements<ReactDispatcher, default_interface<IReactDispatcher>> {
   ReactDispatcher() = default;
   ReactDispatcher(Mso::DispatchQueue &&queue) noexcept;
 
   bool HasThreadAccess() noexcept;
   void Post(ReactDispatcherCallback const &callback) noexcept;
+
+  std::shared_ptr<facebook::react::MessageQueueThread> GetMessageQueueThread() const noexcept;
 
   static IReactDispatcher CreateSerialDispatcher() noexcept;
 
@@ -28,6 +31,7 @@ struct ReactDispatcher : implements<ReactDispatcher, winrt::default_interface<IR
 
  private:
   Mso::DispatchQueue m_queue;
+  std::shared_ptr<Mso::React::MessageDispatchQueue> m_messageQueue;
 };
 
 struct ReactDispatcherHelper {

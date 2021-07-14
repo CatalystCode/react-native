@@ -260,13 +260,13 @@ void ReactInstanceWin::LoadModules(
     const std::shared_ptr<winrt::Microsoft::ReactNative::TurboModulesProvider> &turboModulesProvider) noexcept {
   auto registerNativeModule = [&nativeModulesProvider](
                                   const wchar_t *name, const ReactModuleProvider &provider) noexcept {
-    nativeModulesProvider->AddModuleProvider(name, provider);
+    nativeModulesProvider->AddModuleProvider(name, provider, nullptr);
   };
 
   auto registerTurboModule = [this, &nativeModulesProvider, &turboModulesProvider](
                                  const wchar_t *name, const ReactModuleProvider &provider) noexcept {
     if (m_options.UseWebDebugger()) {
-      nativeModulesProvider->AddModuleProvider(name, provider);
+      nativeModulesProvider->AddModuleProvider(name, provider, nullptr);
     } else {
       turboModulesProvider->AddModuleProvider(name, provider);
     }
@@ -283,7 +283,7 @@ void ReactInstanceWin::LoadModules(
 #ifndef CORE_ABI
   registerTurboModule(
       L"UIManager",
-      // Spec incorrectly reports commandID as a number, but its actually a number | string.. so dont use the spec for
+      // Spec incorrectly reports commandID as a number, but its actually a number | string. So don't use the spec for
       // now
       // winrt::Microsoft::ReactNative::MakeTurboModuleProvider < ::Microsoft::ReactNative::UIManager,
       //::Microsoft::ReactNativeSpecs::UIManagerSpec>());

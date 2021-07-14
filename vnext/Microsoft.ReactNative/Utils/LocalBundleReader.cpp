@@ -15,7 +15,9 @@
 
 namespace Microsoft::ReactNative {
 
-std::future<std::string> LocalBundleReader::LoadBundleAsync(const std::string &bundleUri) {
+// Use of co-routines require values to be alive on the call stack.
+// Thus, the bundleUri must be passed by value or we must make a copy of it locally.
+std::future<std::string> LocalBundleReader::LoadBundleAsync(std::string bundleUri) {
   winrt::hstring str(Microsoft::Common::Unicode::Utf8ToUtf16(bundleUri));
 
   co_await winrt::resume_background();
@@ -23,15 +25,15 @@ std::future<std::string> LocalBundleReader::LoadBundleAsync(const std::string &b
   winrt::Windows::Storage::StorageFile file{nullptr};
 
   // Supports "ms-appx://" or "ms-appdata://"
-  if (bundleUri._Starts_with("ms-app")) {
+  // std::string::rfind with pos=0 is the same as std::string::starts_with in C++20.
+  if (bundleUri.rfind("ms-app", 0) == 0) {
     winrt::Windows::Foundation::Uri uri(str);
     file = co_await winrt::Windows::Storage::StorageFile::GetFileFromApplicationUriAsync(uri);
   } else {
     file = co_await winrt::Windows::Storage::StorageFile::GetFileFromPathAsync(str);
   }
 
-  // Read the buffer manually to avoid a Utf8 -> Utf16 -> Utf8 encoding
-  // roundtrip.
+  // Read the buffer manually to avoid a Utf8 -> Utf16 -> Utf8 encoding round-trip.
   auto fileBuffer{co_await winrt::Windows::Storage::FileIO::ReadBufferAsync(file)};
   auto dataReader{winrt::Windows::Storage::Streams::DataReader::FromBuffer(fileBuffer)};
 

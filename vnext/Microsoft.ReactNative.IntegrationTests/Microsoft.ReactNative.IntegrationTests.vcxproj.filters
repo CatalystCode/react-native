@@ -24,6 +24,7 @@
     </ClCompile>
     <ClCompile Include="JsiTurboModuleTests.cpp" />
     <ClCompile Include="JsiSimpleTurboModuleTests.cpp" />
+    <ClCompile Include="DispatchedNativeModuleTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(ReactNativeDir)\ReactCommon\jsi\jsi\test\testlib.h" />
@@ -50,6 +51,7 @@
     </None>
     <None Include="JsiSimpleTurboModuleTests.js" />
     <None Include="ReactNotificationServiceTests.js" />
+    <None Include="DispatchedNativeModuleTests.js" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Utilities">

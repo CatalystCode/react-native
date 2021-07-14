@@ -10,13 +10,17 @@
 
 #undef GetCurrentTime
 
+#include <CppWinRTIncludes.h>
 #include <winrt/Microsoft.ReactNative.h>
-#include <winrt/Windows.Foundation.Collections.h>
-#include <winrt/Windows.Foundation.h>
 
-#include "gtest/gtest.h"
-#include "motifCpp/gTestAdapter.h"
-#include "motifCpp/testCheck.h"
+#include <future/future.h>
+#include <future/futureWait.h>
+#include <gtest/gtest.h>
+#include <motifCpp/gTestAdapter.h>
+#include <motifCpp/testCheck.h>
+
+#include <mutex>
+#include <stack>
 
 #ifndef CXXUNITTESTS
 #define CXXUNITTESTS
