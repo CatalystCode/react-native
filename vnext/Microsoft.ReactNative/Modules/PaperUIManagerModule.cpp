@@ -167,10 +167,11 @@ class UIManagerModule : public std::enable_shared_from_this<UIManagerModule>, pu
       React::JSValueArray &&point,
       std::function<void(double nativeViewTag, double left, double top, double width, double height)>
           &&callback) noexcept {
-    auto &node = m_nodeRegistry.getNode(reactTag);
-    float x = static_cast<float>(point[0]);
-    float y = static_cast<float>(point[1]);
-    m_nativeUIManager->findSubviewIn(node, x, y, std::move(callback));
+    if (auto node = m_nodeRegistry->findNode(reactTag)) {
+      float x = static_cast<float>(point[0]);
+      float y = static_cast<float>(point[1]);
+      m_nativeUIManager->findSubviewIn(*node, x, y, std::move(callback));
+    }
   }
 
   void dispatchViewManagerCommand(
@@ -178,34 +179,35 @@ class UIManagerModule : public std::enable_shared_from_this<UIManagerModule>, pu
       winrt::Microsoft::ReactNative::JSValue &&commandID,
       React::JSValueArray &&commandArgs) noexcept {
     m_nativeUIManager->ensureInBatch();
-    auto &node = m_nodeRegistry.getNode(reactTag);
-
-    if (!node.m_zombie)
-      node.dispatchCommand(commandID.AsString(), std::move(commandArgs));
+    if (auto node = m_nodeRegistry.findNode(reactTag)) {
+      if (!node->m_zombie)
+        node->dispatchCommand(commandID.AsString(), std::move(commandArgs));
+    }
   }
 
   void measure(
       int64_t reactTag,
       std::function<void(double left, double top, double width, double height, double pageX, double pageY)>
           &&callback) noexcept {
-    auto &node = m_nodeRegistry.getNode(reactTag);
-    int64_t rootTag = reactTag;
-    while (true) {
-      auto &currNode = m_nodeRegistry.getNode(rootTag);
-      if (currNode.m_parent == -1)
-        break;
-      rootTag = currNode.m_parent;
-    }
-    auto &rootNode = m_nodeRegistry.getNode(rootTag);
+    if (auto node = m_nodeRegistry.findNode(reactTag)) {
+      int64_t rootTag = reactTag;
+      while (true) {
+        auto currNode = m_nodeRegistry.getNode(rootTag);
+        if (currNode.m_parent == -1)
+          break;
+        rootTag = currNode.m_parent;
+      }
+      auto &rootNode = m_nodeRegistry.getNode(rootTag);
 
-    m_nativeUIManager->measure(node, rootNode, std::move(callback));
+      m_nativeUIManager->measure(*node, rootNode, std::move(callback));
+    }
   }
 
   void measureInWindow(
       int64_t reactTag,
       std::function<void(double x, double y, double width, double height)> &&callback) noexcept {
-    auto &node = m_nodeRegistry.getNode(reactTag);
-    m_nativeUIManager->measureInWindow(node, std::move(callback));
+    if (auto node = m_nodeRegistry.findNode(reactTag))
+      m_nativeUIManager->measureInWindow(*node, std::move(callback));
   }
 
   void viewIsDescendantOf(
@@ -221,9 +223,11 @@ class UIManagerModule : public std::enable_shared_from_this<UIManagerModule>, pu
       int64_t ancestorReactTag,
       std::function<void(React::JSValue const &)> &&errorCallback,
       std::function<void(double left, double top, double width, double height)> &&callback) noexcept {
-    auto &node = m_nodeRegistry.getNode(reactTag);
-    auto &ancestorNode = m_nodeRegistry.getNode(ancestorReactTag);
-    m_nativeUIManager->measureLayout(node, ancestorNode, std::move(errorCallback), std::move(callback));
+    auto node = m_nodeRegistry.findNode(reactTag);
+    auto ancestorNode = m_nodeRegistry.findNode(ancestorReactTag);
+    if (node && ancestorNode) {
+      m_nativeUIManager->measureLayout(*node, *ancestorNode, std::move(errorCallback), std::move(callback));
+    }
   }
 
   void measureLayoutRelativeToParent(
@@ -251,13 +255,14 @@ class UIManagerModule : public std::enable_shared_from_this<UIManagerModule>, pu
 
   void removeSubviewsFromContainerWithID(int64_t containerID) noexcept {
     m_nativeUIManager->ensureInBatch();
-    auto &containerNode = m_nodeRegistry.getNode(containerID);
+    if (auto containerNode = m_nodeRegistry.findNode(containerID)) {
 
-    std::vector<int64_t> indicesToRemove(containerNode.m_children.size());
-    for (size_t i = 0; i < containerNode.m_children.size(); i++)
-      indicesToRemove[static_cast<size_t>(i)] = static_cast<int64_t>(i);
-    std::vector<int64_t> emptyVec;
-    manageChildren(containerID, emptyVec, emptyVec, emptyVec, emptyVec, indicesToRemove);
+      std::vector<int64_t> indicesToRemove(containerNode->m_children.size());
+      for (size_t i = 0; i < containerNode->m_children.size(); i++)
+        indicesToRemove[static_cast<size_t>(i)] = static_cast<int64_t>(i);
+      std::vector<int64_t> emptyVec;
+      manageChildren(*containerID, emptyVec, emptyVec, emptyVec, emptyVec, indicesToRemove);
+    }
   }
 
   void replaceExistingNonRootView(int64_t reactTag, int64_t newReactTag) noexcept {
@@ -267,39 +272,44 @@ class UIManagerModule : public std::enable_shared_from_this<UIManagerModule>, pu
     std::vector<int64_t> tagToAdd(1);
     tagToAdd[0] = newReactTag;
 
-    CHECK(m_nodeRegistry.getNode(reactTag).m_parent != -1) << "oldTag must have a parent";
-    auto &parent = m_nodeRegistry.getNode(m_nodeRegistry.getNode(reactTag).m_parent);
-    auto it = find(parent.m_children.begin(), parent.m_children.end(), reactTag);
-    CHECK(it != parent.m_children.end());
-    indicesToAdd[0] = indicesToRemove[0] = it - parent.m_children.begin();
+    if (auto node = m_nodeRegistry.findNode(reactTag)) {
+      CHECK(node->m_parent != -1) << "oldTag must have a parent";
+      if (auto parent = m_nodeRegistry.findNode(node->m_parent)) {
+        auto it = find(parent->m_children.begin(), parent->m_children.end(), reactTag);
+        CHECK(it != parent->m_children.end());
+        indicesToAdd[0] = indicesToRemove[0] = it - parent->m_children.begin();
 
-    std::vector<int64_t> emptyVec;
-    manageChildren(parent.m_tag, emptyVec, emptyVec, tagToAdd, indicesToAdd, indicesToRemove);
+        std::vector<int64_t> emptyVec;
+        manageChildren(parent->m_tag, emptyVec, emptyVec, tagToAdd, indicesToAdd, indicesToRemove);
+      }
+    }
   }
 
   void removeRootView(int64_t rootViewTag) noexcept {
     m_nativeUIManager->ensureInBatch();
-    auto &node = m_nodeRegistry.getRoot(rootViewTag);
-    m_nativeUIManager->removeRootView(node);
-    DropView(rootViewTag, true);
-    m_nodeRegistry.removeRootView(rootViewTag);
-    m_nativeUIManager->destroyRootShadowNode(&node);
+    if (auto node = m_nodeRegistry.findRoot(rootViewTag)) {
+      m_nativeUIManager->removeRootView(*node);
+      DropView(rootViewTag, true);
+      m_nodeRegistry.removeRootView(rootViewTag);
+      m_nativeUIManager->destroyRootShadowNode(node);
+    }
   }
 
   void setChildren(int64_t containerTag, React::JSValueArray &&reactTags) noexcept {
     m_nativeUIManager->ensureInBatch();
-    auto &parent = m_nodeRegistry.getNode(containerTag);
-    int64_t index = 0;
-    for (auto &&childTag : reactTags) {
-      auto tag = childTag.AsInt64();
-      auto &childNode = m_nodeRegistry.getNode(tag);
-      childNode.m_parent = parent.m_tag;
-      parent.m_children.push_back(tag);
-      if (!parent.m_zombie)
-        parent.AddView(childNode, index);
+    if (auto parent = m_nodeRegistry.findNode(containerTag)) {
+      int64_t index = 0;
+      for (auto &&childTag : reactTags) {
+        auto tag = childTag.AsInt64();
+        auto childNode = m_nodeRegistry.findNode(tag);
+        childNode->m_parent = parent->m_tag;
+        parent->m_children.push_back(tag);
+        if (!parent->m_zombie)
+          parent->AddView(*childNode, index);
 
-      m_nativeUIManager->AddView(parent, childNode, index);
-      ++index;
+        m_nativeUIManager->AddView(*parent, *childNode, index);
+        ++index;
+      }
     }
   }
 
@@ -481,23 +491,23 @@ class UIManagerModule : public std::enable_shared_from_this<UIManagerModule>, pu
   }
 
   void DropView(int64_t tag, bool removeChildren = true, bool zombieView = false) {
-    auto &node = m_nodeRegistry.getNode(tag);
+    if (auto node = m_nodeRegistry.findNode(tag)) {
+      node->onDropViewInstance();
 
-    node.onDropViewInstance();
+      m_nativeUIManager->RemoveView(*node, removeChildren);
 
-    m_nativeUIManager->RemoveView(node, removeChildren);
+      if (zombieView)
+        node->m_zombie = true;
 
-    if (zombieView)
-      node.m_zombie = true;
+      for (auto childTag : node->m_children)
+        DropView(childTag, removeChildren, zombieView);
 
-    for (auto childTag : node.m_children)
-      DropView(childTag, removeChildren, zombieView);
+      if (removeChildren)
+        node->removeAllChildren();
 
-    if (removeChildren)
-      node.removeAllChildren();
-
-    if (!zombieView)
-      m_nodeRegistry.removeNode(tag);
+      if (!zombieView)
+        m_nodeRegistry.removeNode(tag);
+    }
   }
 
   winrt::Microsoft::ReactNative::ReactContext m_context;

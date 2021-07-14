@@ -1,0 +1,7 @@
+{
+  "type": "prerelease",
+  "comment": "Guard against nodes going away (i.e. in react-navigation)",
+  "packageName": "react-native-windows",
+  "email": "asklar@microsoft.com",
+  "dependentChangeType": "patch"
+}
