@@ -21,6 +21,7 @@
 #include <UI.Xaml.Controls.h>
 #include <UI.Xaml.Hosting.h>
 #include <winrt/Windows.Foundation.Collections.h>
+#include <winrt/Windows.UI.Xaml.Automation.h>
 #pragma pop_macro("GetCurrentTime")
 
 #ifndef USE_WINUI3
@@ -110,6 +111,11 @@ struct WindowData {
           auto rootElement = m_desktopWindowXamlSource.Content().as<controls::Panel>();
           winrt::Microsoft::ReactNative::XamlUIService::SetXamlRoot(
               host.InstanceSettings().Properties(), rootElement.XamlRoot());
+          winrt::Microsoft::ReactNative::XamlUIService::SetAccessibleRoot(
+              host.InstanceSettings().Properties(), rootElement);
+          rootElement.SetValue(
+              winrt::Windows::UI::Xaml::Automation::AutomationProperties::LandmarkTypeProperty(),
+              winrt::box_value(80002));
 
 #ifdef USE_WINUI3
           const auto islandWindow = (uint64_t)GetXamlIslandHwnd(m_desktopWindowXamlSource);
