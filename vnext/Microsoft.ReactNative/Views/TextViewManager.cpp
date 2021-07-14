@@ -4,6 +4,7 @@
 #include "pch.h"
 
 #include "TextViewManager.h"
+#include "Utils/Helpers.h"
 
 #include <Views/RawTextViewManager.h>
 #include <Views/ShadowNodeBase.h>
@@ -11,6 +12,7 @@
 
 #include <UI.Xaml.Automation.Peers.h>
 #include <UI.Xaml.Automation.h>
+#include <UI.Xaml.Controls.Primitives.h>
 #include <UI.Xaml.Controls.h>
 #include <UI.Xaml.Documents.h>
 #include <Utils/PropertyUtils.h>
@@ -211,10 +213,24 @@ bool TextViewManager::UpdateProperty(
       textBlock.ClearValue(xaml::Controls::TextBlock::LineStackingStrategyProperty());
     }
   } else if (propertyName == "selectable") {
-    if (propertyValue.Type() == winrt::Microsoft::ReactNative::JSValueType::Boolean)
-      textBlock.IsTextSelectionEnabled(propertyValue.AsBoolean());
-    else if (propertyValue.IsNull())
+    if (propertyValue.Type() == winrt::Microsoft::ReactNative::JSValueType::Boolean) {
+      const auto selectable = propertyValue.AsBoolean();
+      textBlock.IsTextSelectionEnabled(selectable);
+      // This works around a XAML Islands bug where the XamlRoot of the first
+      // window the flyout is shown on takes ownership of the flyout and attempts
+      // to show the flyout on other windows cause the first window to get focus.
+      // https://github.com/microsoft/microsoft-ui-xaml/issues/5341
+      if (selectable && IsXamlIsland() &&
+          winrt::Windows::Foundation::Metadata::ApiInformation::IsApiContractPresent(
+              L"Windows.Foundation.UniversalApiContract", 7)) {
+        xaml::Controls::TextCommandBarFlyout flyout;
+        flyout.Placement(xaml::Controls::Primitives::FlyoutPlacementMode::BottomEdgeAlignedLeft);
+        textBlock.ContextFlyout(flyout);
+        textBlock.SelectionFlyout(flyout);
+      }
+    } else if (propertyValue.IsNull()) {
       textBlock.ClearValue(xaml::Controls::TextBlock::IsTextSelectionEnabledProperty());
+    }
   } else if (propertyName == "allowFontScaling") {
     if (propertyValue.Type() == winrt::Microsoft::ReactNative::JSValueType::Boolean) {
       textBlock.IsTextScaleFactorEnabled(propertyValue.AsBoolean());

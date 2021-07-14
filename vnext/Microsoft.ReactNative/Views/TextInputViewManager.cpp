@@ -6,7 +6,9 @@
 #include "TextInputViewManager.h"
 
 #include "Unicode.h"
+#include "Utils/Helpers.h"
 
+#include <UI.Xaml.Controls.Primitives.h>
 #include <UI.Xaml.Controls.h>
 #include <UI.Xaml.Input.h>
 #include <UI.Xaml.Shapes.h>
@@ -804,6 +806,18 @@ ShadowNode *TextInputViewManager::createShadow() const {
 
 XamlView TextInputViewManager::CreateViewCore(int64_t /*tag*/, const winrt::Microsoft::ReactNative::JSValueObject &) {
   xaml::Controls::TextBox textBox;
+  // This works around a XAML Islands bug where the XamlRoot of the first
+  // window the flyout is shown on takes ownership of the flyout and attempts
+  // to show the flyout on other windows cause the first window to get focus.
+  // https://github.com/microsoft/microsoft-ui-xaml/issues/5341
+  if (IsXamlIsland() &&
+      winrt::Windows::Foundation::Metadata::ApiInformation::IsApiContractPresent(
+          L"Windows.Foundation.UniversalApiContract", 7)) {
+    xaml::Controls::TextCommandBarFlyout flyout;
+    flyout.Placement(xaml::Controls::Primitives::FlyoutPlacementMode::BottomEdgeAlignedLeft);
+    textBox.ContextFlyout(flyout);
+    textBox.SelectionFlyout(flyout);
+  }
   return textBox;
 }
 
