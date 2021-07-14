@@ -1,0 +1,7 @@
+{
+  "type": "prerelease",
+  "comment": "Fixes crash due to TextInput flyout Proofing sub-menu",
+  "packageName": "react-native-windows",
+  "email": "erozell@outlook.com",
+  "dependentChangeType": "patch"
+}

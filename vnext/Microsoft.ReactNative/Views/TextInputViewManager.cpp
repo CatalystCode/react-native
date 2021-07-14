@@ -6,7 +6,9 @@
 #include "TextInputViewManager.h"
 
 #include "Unicode.h"
+#include "Utils/Helpers.h"
 
+#include <UI.Xaml.Controls.Primitives.h>
 #include <UI.Xaml.Controls.h>
 #include <UI.Xaml.Input.h>
 #include <UI.Xaml.Shapes.h>
@@ -89,6 +91,29 @@ static xaml::Input::InputScopeNameValue parseKeyboardType(
 }
 
 namespace Microsoft::ReactNative {
+
+struct CustomAppBarButton : winrt::AppBarButtonT<CustomAppBarButton> {
+  void OnPointerExited(xaml::Input::PointerRoutedEventArgs const &e) {
+    // This method crashes in the superclass, so we purposely don't call super. But the superclass
+    // implementation likely cancels a timer that will show the submenu shortly after pointer enter.
+    // Since we don't have access to that timer, instead we reset the Flyout property, which resets
+    // the timer. This also fixes a crash where you can get a zombie submenu showing if the app
+    // loses focus while this timer is scheduled to show the submenu.
+    if (auto flyout = this->Flyout()) {
+      this->Flyout(nullptr);
+      this->Flyout(flyout);
+    }
+
+    // The superclass implementation resets the button to the normal state, so we do this ourselves.
+    this->SetValue(xaml::Controls::Primitives::ButtonBase::IsPointerOverProperty(), winrt::box_value(false));
+    winrt::VisualStateManager::GoToState(*this, L"Normal", false);
+  }
+
+  void OnPointerPressed(xaml::Input::PointerRoutedEventArgs const &e) {
+    // Clicking AppBarButton by default will dismiss the menu, but since we only use this class for
+    // submenus we override it to be a no-op so it behaves like MenuFlyoutSubItem.
+  }
+};
 
 class TextInputShadowNode : public ShadowNodeBase {
   using Super = ShadowNodeBase;
@@ -802,8 +827,43 @@ ShadowNode *TextInputViewManager::createShadow() const {
   return new TextInputShadowNode();
 }
 
-XamlView TextInputViewManager::CreateViewCore(int64_t /*tag*/, const winrt::Microsoft::ReactNative::JSValueObject &) {
+XamlView TextInputViewManager::CreateViewCore(int64_t tag, const winrt::Microsoft::ReactNative::JSValueObject &) {
   xaml::Controls::TextBox textBox;
+  // This works around a XAML Islands bug where the XamlRoot of the first
+  // window the flyout is shown on takes ownership of the flyout and attempts
+  // to show the flyout on other windows cause the first window to get focus.
+  // https://github.com/microsoft/microsoft-ui-xaml/issues/5341
+  if (IsXamlIsland() &&
+      winrt::Windows::Foundation::Metadata::ApiInformation::IsApiContractPresent(
+          L"Windows.Foundation.UniversalApiContract", 7)) {
+    xaml::Controls::TextCommandBarFlyout flyout;
+    flyout.Opening([tag](winrt::IInspectable const &sender, auto &&) {
+      // Workaround Xaml Islands crash: https://github.com/microsoft/microsoft-ui-xaml/issues/3529
+      if (const auto &flyout = sender.try_as<xaml::Controls::TextCommandBarFlyout>()) {
+        if (const auto &textBox = flyout.Target().try_as<xaml::Controls::TextBox>().ProofingMenuFlyout()) {
+          const auto &commands = flyout.SecondaryCommands();
+          for (auto i = 0; i < commands.Size(); ++i) {
+            if (const auto &appBarButton = commands.GetAt(i).try_as<winrt::AppBarButton>()) {
+              // Replace the AppBarButton for the proofing menu with one that doesn't crash
+              const auto customAppBarButton = winrt::make<CustomAppBarButton>();
+              customAppBarButton.Label(appBarButton.Label());
+              customAppBarButton.Icon(appBarButton.Icon());
+              customAppBarButton.Flyout(appBarButton.Flyout());
+              commands.RemoveAt(i);
+              commands.InsertAt(i, customAppBarButton);
+
+              // There is only one proofing menu option
+              break;
+            }
+          }
+        }
+      }
+    });
+
+    flyout.Placement(xaml::Controls::Primitives::FlyoutPlacementMode::BottomEdgeAlignedLeft);
+    textBox.ContextFlyout(flyout);
+    textBox.SelectionFlyout(flyout);
+  }
   return textBox;
 }
 
