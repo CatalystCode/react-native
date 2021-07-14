@@ -139,7 +139,7 @@ function getReactNativeProjectName(): string {
   const pkgJsonPath = findUp.sync('package.json', {cwd});
   if (!pkgJsonPath) {
     throw new CodedError(
-      'NoPackageJSon',
+      'NoPackageJson',
       'Unable to find package.json.  This should be run from within an existing react-native project.',
     );
   }
@@ -294,7 +294,7 @@ function installReactNativeWindows(
 
   const pkgJsonPath = findUp.sync('package.json', {cwd});
   if (!pkgJsonPath) {
-    throw new CodedError('NoPackageJSon', 'Unable to find package.json');
+    throw new CodedError('NoPackageJson', 'Unable to find package.json');
   }
 
   const pkgJson = require(pkgJsonPath);

@@ -18,7 +18,11 @@
     "watch": "rnw-scripts watch"
   },
   "dependencies": {
-    "applicationinsights": "^1.8.8"
+    "applicationinsights": "^2.1.4",
+    "ci-info": "^3.2.0",
+    "node-machine-id": "^1.1.12",
+    "os-locale": "^5.0.0",
+    "semver": "^7.3.5"
   },
   "devDependencies": {
     "@rnw-scripts/eslint-config": "1.1.7",

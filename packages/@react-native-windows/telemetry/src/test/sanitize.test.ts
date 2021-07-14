@@ -17,8 +17,7 @@ import {basename} from 'path';
 import {CodedError} from '../CodedError';
 
 delete process.env.AGENT_NAME; // allow this test to run in Azure DevOps / GHA
-Telemetry.setup(true);
-Telemetry.client!.config.disableAppInsights = true;
+Telemetry.setup({preserveErrorMessages: true, shouldDisable: true});
 
 test('Sanitize message, no-op', () => {
   // do stuff
@@ -343,7 +342,7 @@ test('trackEvent should not identify roleInstance', () => {
 /////////////////////////
 // CodedError tests
 test('No message', done => {
-  Telemetry.preserveMessages = false;
+  Telemetry.options.preserveErrorMessages = false;
   let pass = false;
   Telemetry.client!.addTelemetryProcessor((envelope, _) => {
     if (envelope.data.baseType === 'ExceptionData') {

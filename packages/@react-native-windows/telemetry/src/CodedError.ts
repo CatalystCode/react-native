@@ -10,7 +10,7 @@ export const CodedErrors = {
   UnsupportedReactNativeVersion: 1,
   UserCancel: 2,
   NoReactNativeFound: 3,
-  NoPackageJSon: 4,
+  NoPackageJson: 4,
   NoLatestReactNativeWindows: 5,
   NoAutoMatchingReactNativeWindows: 6,
   IncompatibleOptions: 7,
@@ -71,7 +71,7 @@ export type CodedErrorType = keyof typeof CodedErrors;
  */
 export class CodedError extends Error {
   constructor(
-    type: CodedErrorType,
+    public readonly type: CodedErrorType,
     message: string,
     public readonly data?: Record<string, any>,
   ) {
