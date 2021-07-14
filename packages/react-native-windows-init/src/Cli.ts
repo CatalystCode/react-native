@@ -29,7 +29,10 @@ import {
  * See https://github.com/microsoft/ApplicationInsights-node.js/issues/580
  */
 
-import requireGenerateWindows from './requireGenerateWindows';
+import {
+  registerCliOptions as registerGeneratorCliOptions,
+  requireGenerateProject,
+} from './GeneratorShim';
 
 const npmConfReg = execSync('npm config get registry')
   .toString()
@@ -62,54 +65,6 @@ const argv = yargs
         'Controls sending telemetry that allows analysis of usage and failures of the react-native-windows CLI',
       default: false,
     },
-    language: {
-      type: 'string',
-      describe: 'The language the project is written in.',
-      choices: ['cs', 'cpp'],
-      default: 'cpp',
-    },
-    overwrite: {
-      type: 'boolean',
-      describe: 'Overwrite any existing files without prompting',
-      default: false,
-    },
-    projectType: {
-      type: 'string',
-      describe: 'The type of project to initialize (supported on 0.64+)',
-      choices: ['app', 'lib'],
-      default: 'app',
-    },
-    experimentalNuGetDependency: {
-      type: 'boolean',
-      describe:
-        '[Experimental] change to start consuming a NuGet containing a pre-built dll version of Microsoft.ReactNative',
-      hidden: true,
-      default: false,
-    },
-    useHermes: {
-      type: 'boolean',
-      describe:
-        '[Experimental] Use Hermes instead of Chakra as the JS engine (supported on 0.64+ for C++ projects)',
-      default: false,
-    },
-    useWinUI3: {
-      type: 'boolean',
-      describe: '[Experimental] Use WinUI3',
-      hidden: true,
-      default: false,
-    },
-    nuGetTestVersion: {
-      type: 'string',
-      describe:
-        '[internalTesting] By default the NuGet version matches the rnw package. This flag allows manually specifying the version for internal testing.',
-      hidden: true,
-    },
-    nuGetTestFeed: {
-      type: 'string',
-      describe:
-        '[internalTesting] Allows a test feed to be added to the generated NuGet configuration',
-      hidden: true,
-    },
     useDevMode: {
       type: 'boolean',
       describe:
@@ -117,8 +72,9 @@ const argv = yargs
       hidden: true,
       conflicts: 'version',
     },
-  })
-  .strict(true).argv;
+  }).argv;
+
+registerGeneratorCliOptions(yargs);
 
 if (argv.verbose) {
   console.log(argv);
@@ -476,19 +432,17 @@ function isProjectUsingYarn(cwd: string): boolean {
 
     installReactNativeWindows(version, useDevMode);
 
-    const generateWindows = requireGenerateWindows();
-    await generateWindows(process.cwd(), name, ns, {
-      language: argv.language as 'cs' | 'cpp',
-      overwrite: argv.overwrite,
+    const generateProject = requireGenerateProject();
+    if (generateProject === null) {
+      throw new CodedError(
+        'GeneratorNotFound',
+        'Could not locate project generator',
+      );
+    }
+
+    await generateProject(process.cwd(), name, ns, {
+      useDevMode,
       verbose: argv.verbose,
-      projectType: argv.projectType as 'lib' | 'app',
-      experimentalNuGetDependency: argv.experimentalNuGetDependency,
-      useWinUI3: argv.useWinUI3,
-      useHermes: argv.useHermes,
-      useDevMode: useDevMode,
-      nuGetTestVersion: argv.nuGetTestVersion,
-      nuGetTestFeed: argv.nuGetTestFeed,
-      telemetry: argv.telemetry,
     });
     return setExit('Success');
   } catch (error) {

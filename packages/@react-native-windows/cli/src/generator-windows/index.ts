@@ -21,7 +21,7 @@ import {
   copyAndReplaceAll,
   copyAndReplaceWithChangedCallback,
 } from '../generator-common';
-import {GenerateOptions} from '..';
+import {GeneratorOptions} from '../generatorOptions';
 import {CodedError} from '@react-native-windows/telemetry';
 import {
   findPackage,
@@ -116,7 +116,7 @@ export async function copyProjectTemplateAndReplace(
   destPath: string,
   newProjectName: string,
   namespace: string,
-  options: GenerateOptions,
+  options: GeneratorOptions,
 ) {
   if (!srcRootPath) {
     throw new CodedError(

@@ -1,0 +1,7 @@
+{
+  "type": "prerelease",
+  "comment": "Move Project Generation Flags from init to Generator",
+  "packageName": "@react-native-windows/telemetry",
+  "email": "ngerlem@microsoft.com",
+  "dependentChangeType": "patch"
+}

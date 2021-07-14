@@ -98,7 +98,7 @@
     "/DeforkingPatches",
     "fmt",
     "/Folly",
-    "/generate.js",
+    "/generator.js",
     "/include",
     "/jest",
     "/JSI",

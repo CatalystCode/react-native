@@ -6,6 +6,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import yargs from 'yargs';
 import {Telemetry} from '@react-native-windows/telemetry';
 
 import {
@@ -17,73 +18,37 @@ import {autoLinkCommand} from './runWindows/utils/autolink';
 import {runWindowsCommand} from './runWindows/runWindows';
 import {dependencyConfigWindows} from './config/dependencyConfig';
 import {projectConfigWindows} from './config/projectConfig';
+import {
+  GeneratorOptions,
+  GeneratorCliOptions,
+  GeneratorInitOptions,
+  registerCliOptions,
+} from './generatorOptions';
 
-/**
- * Project generation options
- *
- *      _
- *     | |
- *   __| | __ _ _ __   __ _  ___ _ __
- *  / _` |/ _` | '_ \ / _` |/ _ \ '__|
- * | (_| | (_| | | | | (_| |  __/ |
- *  \__,_|\__,_|_| |_|\__, |\___|_|
- *                     __/ |
- *                    |___/
- *
- *
- * Properties on this interface must remain stable, as new versions of
- * react-native-windows-init may be used with local-cli dating back to 0.61.
- * All existing arguments must work correctly when changing this interface.
- */
-export interface GenerateOptions {
-  overwrite: boolean;
-  language: 'cpp' | 'cs';
-  projectType: 'app' | 'lib';
-  experimentalNuGetDependency: boolean;
-  nuGetTestVersion?: string;
-  nuGetTestFeed?: string;
-  useWinUI3: boolean;
-  useHermes: boolean;
-  useDevMode: boolean;
-  verbose: boolean;
-  telemetry: boolean;
-}
-
-function scrubOptions(opt: GenerateOptions) {
-  return {
-    overwrite: opt.overwrite,
-    language: opt.language,
-    projectType: opt.projectType,
-    experimentalNuGetDependency: opt.experimentalNuGetDependency,
-    nuGetTestFeed: opt.nuGetTestFeed !== undefined ? true : false,
-    nuGetTestVersion: opt.nuGetTestVersion !== undefined ? true : false,
-    useWinUI3: opt.useWinUI3,
-    useHermes: opt.useHermes,
-    verbose: opt.verbose,
-  };
-}
-
+export {registerCliOptions};
 /**
  * Simple utility for running the Windows generator.
  *
  * @param  projectDir root project directory (i.e. contains index.js)
  * @param  name       name of the root JS module for this app
  * @param  ns         namespace for the project
- * @param  options    command line options container
+ * @param  options    non-CLI-driven generation options
  */
-export async function generateWindows(
+export async function generateProject(
   projectDir: string,
   name: string,
   ns: string,
-  options: GenerateOptions,
+  initOptions: GeneratorInitOptions,
 ) {
+  const cliOptions = (yargs.argv as unknown) as GeneratorCliOptions;
+  const options: GeneratorOptions = {...initOptions, ...cliOptions};
+
   let error;
   try {
     if (!fs.existsSync(projectDir)) {
       fs.mkdirSync(projectDir);
     }
-
-    await installScriptsAndDependencies(options);
+    await installScriptsAndDependencies({verbose: options.verbose});
 
     const rnwPackage = path.dirname(
       require.resolve('react-native-windows/package.json', {
@@ -137,16 +102,21 @@ export async function generateWindows(
   }
 }
 
-// Assert the interface here doesn't change for the reasons above
-const assertStableInterface: typeof generateWindows extends (
-  projectDir: string,
-  name: string,
-  ns: string,
-  options: GenerateOptions,
-) => Promise<void>
-  ? true
-  : never = true;
-assertStableInterface;
+export type GenerateProject = typeof generateProject;
+
+function scrubOptions(opts: GeneratorOptions) {
+  return {
+    overwrite: opts.overwrite,
+    language: opts.language,
+    projectType: opts.projectType,
+    experimentalNuGetDependency: opts.experimentalNuGetDependency,
+    nuGetTestFeed: opts.nuGetTestFeed !== undefined ? true : false,
+    nuGetTestVersion: opts.nuGetTestVersion !== undefined ? true : false,
+    useWinUI3: opts.useWinUI3,
+    useHermes: opts.useHermes,
+    verbose: opts.verbose,
+  };
+}
 
 export const commands = [autoLinkCommand, runWindowsCommand];
 export const dependencyConfig = dependencyConfigWindows;

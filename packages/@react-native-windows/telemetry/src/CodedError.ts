@@ -16,6 +16,7 @@ export const CodedErrors = {
   IncompatibleOptions: 7,
   NoReactNativeDependencies: 8,
   NoMatchingPackageVersion: 9,
+  GeneratorNotFound: 10,
   // run-windows
   NoSolution: 100,
   // Project generation
