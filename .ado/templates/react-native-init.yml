@@ -29,6 +29,9 @@ parameters:
   - name: continueOnBuildFailure
     type: boolean
     default: false
+  - name: verifyAppLaunch
+    type: string
+    default: false
   - name: buildEnvironment
     type: string
     default: PullRequest
@@ -144,6 +147,14 @@ steps:
       workingDirectory: $(Agent.BuildDirectory)\testcli
     condition: and(succeeded(), ${{ not(parameters.useNuGet) }})
 
+  - powershell: |
+      [xml] $manifest = Get-Content .\Package.appxmanifest
+      $manifest.Package.Identity.Name = 'ReactNative.InitTest'
+      $manifest.Save("$pwd\Package.appxmanifest")
+    displayName: Set AppX package name to "ReactNative.InitTest"
+    workingDirectory: $(Agent.BuildDirectory)\testcli\windows\testcli
+    condition: and(succeeded(), eq(variables['localProjectType'], 'app'))
+
   # Reclaim memory used by Verdaccio to reduce the chance of build OOM issues
   - script: tskill node
     displayName: Kill Verdaccio
@@ -206,7 +217,7 @@ steps:
   - task: CmdLine@2
     displayName: Build project (Release)
     inputs:
-      script: npx --no-install react-native run-windows --arch ${{ parameters.platform }} --no-launch --logging --buildLogDirectory $(Build.BinariesDirectory)\${{ parameters.platform }}\${{ parameters.configuration }}\BuildLogs --release ${{ parameters.additionalRunArguments }}
+      script: npx --no-install react-native run-windows --arch ${{ parameters.platform }} --logging --buildLogDirectory $(Build.BinariesDirectory)\${{ parameters.platform }}\${{ parameters.configuration }}\BuildLogs --release ${{ parameters.additionalRunArguments }}
       workingDirectory: $(Agent.BuildDirectory)\testcli
     continueOnError: ${{ parameters.continueOnBuildFailure }}
     condition: and(succeeded(), eq('Release', variables['localConfig']))
@@ -229,6 +240,20 @@ steps:
       script: npx --no-install react-native bundle --entry-file index.js --platform windows --bundle-output test.bundle
       workingDirectory: $(Agent.BuildDirectory)\testcli
     condition: and(succeeded(), eq(variables['localProjectType'], 'app'))
+
+  - powershell: |
+      $appxPackage = Get-AppxPackage -Name ReactNative.InitTest
+      Write-Output $appxPackage
+
+      $packageFamilyName = $appxPackage.PackageFamilyName;
+      Write-Host "##vso[task.setvariable variable=NEW_APP_TEST_PACKAGE]$packageFamilyName"
+    displayName: Discover and set PackageFullName
+    condition: and(succeeded(), eq(variables['verifyAppLaunch'], 'true'))
+
+  - script: npx jest --color
+    displayName: Verify app launch
+    workingDirectory: packages\@rnw-scripts\new-app-tests
+    condition: and(succeeded(), eq(variables['verifyAppLaunch'], 'true'))
 
   # We are experiencing random package restore failures.
   # We want to uploading the vedaccio logs to aid in diagnosing if it is verdaccio or npmjs.org

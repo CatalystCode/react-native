@@ -417,6 +417,13 @@
     },
     {
       "type": "patch",
+      "file": "src/Libraries/NewAppScreen/components/Header.js",
+      "baseFile": "Libraries/NewAppScreen/components/Header.js",
+      "baseHash": "c976fcf5038ef3f4e70541e1e032f7f29ca542ae",
+      "issue": 7963
+    },
+    {
+      "type": "patch",
       "file": "src/Libraries/NewAppScreen/components/ReloadInstructions.windows.js",
       "baseFile": "Libraries/NewAppScreen/components/ReloadInstructions.js",
       "baseHash": "39326801da6c9ce8c350aa8ba971be4a386499bc"

@@ -1,0 +1,7 @@
+{
+  "type": "patch",
+  "comment": "better winappdriver location",
+  "packageName": "jest-environment-winappdriver",
+  "email": "ngerlem@microsoft.com",
+  "dependentChangeType": "patch"
+}

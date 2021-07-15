@@ -1,0 +1,7 @@
+{
+  "type": "prerelease",
+  "comment": "Try UIA verification of template app launch",
+  "packageName": "react-native-windows",
+  "email": "ngerlem@microsoft.com",
+  "dependentChangeType": "patch"
+}

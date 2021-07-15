@@ -26,6 +26,7 @@ jobs:
               projectType: app
               additionalInitArguments:
               additionalRunArguments: --no-deploy # We don't have Arm agents
+              verifyAppLaunch: false
             Arm64DebugCs:
               language: cs
               configuration: Debug
@@ -33,6 +34,7 @@ jobs:
               projectType: app
               additionalInitArguments:
               additionalRunArguments: --no-deploy # We don't have Arm agents
+              verifyAppLaunch: false
             Arm64ReleaseCpp:
               language: cpp
               configuration: Release
@@ -40,6 +42,7 @@ jobs:
               projectType: app
               additionalInitArguments:
               additionalRunArguments: --no-deploy # We don't have Arm agents
+              verifyAppLaunch: false
             Arm64ReleaseCs:
               language: cs
               configuration: Release
@@ -47,6 +50,7 @@ jobs:
               projectType: app
               additionalInitArguments:
               additionalRunArguments: --no-deploy # We don't have Arm agents
+              verifyAppLaunch: false
           # End Continuous only
           X64ReleaseCpp:
             language: cpp
@@ -55,6 +59,7 @@ jobs:
             projectType: app
             additionalInitArguments:
             additionalRunArguments:
+            verifyAppLaunch: true
           X64ReleaseCs:
             language: cs
             configuration: Release
@@ -62,6 +67,7 @@ jobs:
             projectType: app
             additionalInitArguments:
             additionalRunArguments:
+            verifyAppLaunch: true
           X86DebugCpp:
             language: cpp
             configuration: Debug
@@ -69,6 +75,7 @@ jobs:
             projectType: app
             additionalInitArguments: --namespace MyCompany.MyApplication.MyComponent
             additionalRunArguments:
+            verifyAppLaunch: false
           X86DebugCs:
             language: cs
             configuration: Debug
@@ -76,6 +83,7 @@ jobs:
             projectType: app
             additionalInitArguments: --namespace MyCompany.MyApplication.MyComponent
             additionalRunArguments:
+            verifyAppLaunch: false
           # Start Continuous only
           ${{ if eq(parameters.buildEnvironment, 'Continuous') }}:
             X86ReleaseCpp:
@@ -85,6 +93,7 @@ jobs:
               projectType: app
               additionalInitArguments:
               additionalRunArguments:
+              verifyAppLaunch: true
             X86ReleaseCs:
               language: cs
               configuration: Release
@@ -92,6 +101,7 @@ jobs:
               projectType: app
               additionalInitArguments:
               additionalRunArguments:
+              verifyAppLaunch: true
             X64DebugCpp:
               language: cpp
               configuration: Debug
@@ -99,6 +109,7 @@ jobs:
               projectType: app
               additionalInitArguments:
               additionalRunArguments:
+              verifyAppLaunch: false
             X64DebugCs:
               language: cs
               configuration: Debug
@@ -106,6 +117,7 @@ jobs:
               projectType: app
               additionalInitArguments:
               additionalRunArguments:
+              verifyAppLaunch: false
           # End Continuous only
 
           X86DebugCppLib:
@@ -115,6 +127,7 @@ jobs:
             projectType: lib
             additionalInitArguments:
             additionalRunArguments: --no-autolink --no-deploy
+            verifyAppLaunch: false
           X86DebugCsLib:
             language: cs
             configuration: Debug
@@ -122,6 +135,7 @@ jobs:
             projectType: lib
             additionalInitArguments:
             additionalRunArguments: --no-autolink --no-deploy
+            verifyAppLaunch: false
 
           X86DebugCppWinUI3:
             language: cpp
@@ -130,6 +144,7 @@ jobs:
             projectType: app
             additionalInitArguments: --useWinUI3 true
             additionalRunArguments:
+            verifyAppLaunch: false
           X86DebugCsWinUI3:
             language: cs
             configuration: Debug
@@ -137,6 +152,8 @@ jobs:
             projectType: app
             additionalInitArguments: --useWinUI3 true
             additionalRunArguments:
+            verifyAppLaunch: false
+
           X86DebugCppHermes:
             language: cpp
             configuration: Debug
@@ -144,6 +161,7 @@ jobs:
             projectType: app
             additionalInitArguments: --useHermes
             additionalRunArguments:
+            verifyAppLaunch: false
           X64ReleaseCsHermes:
             language: cs
             configuration: Release
@@ -151,13 +169,15 @@ jobs:
             projectType: app
             additionalInitArguments: --useHermes
             additionalRunArguments:
-          # ARM64ReleaseCsHermes:
-          #   language: cs
-          #   configuration: Release
-          #   platform: arm64
-          #   projectType: app
-          #   additionalInitArguments: --useHermes
-          #   additionalRunArguments:
+            verifyAppLaunch: true
+          Arm64ReleaseCsHermes:
+            language: cs
+            configuration: Release
+            platform: arm64
+            projectType: app
+            additionalInitArguments: --useHermes
+            additionalRunArguments: --no-deploy # We don't have Arm agents
+            verifyAppLaunch: false
           X64ReleaseCppHermes:
             language: cpp
             configuration: Release
@@ -165,8 +185,9 @@ jobs:
             projectType: app
             additionalInitArguments: --useHermes
             additionalRunArguments:
+            verifyAppLaunch: true
 
-      pool: $(AgentPool.Medium)
+      pool: $(AgentPool.Interactive)
       timeoutInMinutes: 60
       cancelTimeoutInMinutes: 5
 
@@ -180,6 +201,7 @@ jobs:
             additionalInitArguments: $(additionalInitArguments)
             additionalRunArguments: $(additionalRunArguments)
             buildEnvironment: ${{ parameters.buildEnvironment }}
+            verifyAppLaunch: $(verifyAppLaunch)
 
   # We unfortunately can't add the nuget ones to the existing matrix above because Azure DevOps does not allow the dependsOn to be dynamic based on matrix expansion
   - ${{ if parameters.buildNuGetOnly }}:

@@ -1,0 +1,12 @@
+{
+  "extends": "@rnw-scripts/ts-config",
+  "compilerOptions": {
+    "types": ["jest", "webdriverio"]
+  },
+  "include": [
+    "test"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

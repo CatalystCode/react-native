@@ -7,6 +7,7 @@
 
 import {spawn, ChildProcess} from 'child_process';
 import fs from 'fs';
+import path from 'path';
 
 import NodeEnvironment = require('jest-environment-node');
 
@@ -46,7 +47,16 @@ class WinAppDriverEnvironment extends NodeEnvironment {
 
     this.winappdriverBin =
       passedOptions.winAppDriverBin ||
-      'C:\\Program Files (x86)\\Windows Application Driver\\WinAppDriver.exe';
+      path.join(
+        process.env['PROGRAMFILES(X86)']!,
+        'Windows Application Driver\\WinAppDriver.exe',
+      );
+
+    if (!fs.existsSync(this.winappdriverBin)) {
+      throw new Error(
+        `Could not find WinAppDriver at searched location: "${this.winappdriverBin}"`,
+      );
+    }
 
     const baseOptions: RemoteOptions = {
       port: 4723,
